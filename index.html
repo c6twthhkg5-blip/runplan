@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta name="apple-mobile-web-app-title" content="RunPlan">
+<title>RunPlan</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=DM+Mono&display=swap" rel="stylesheet">
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+html { height: 100%; -webkit-text-size-adjust: 100%; }
+body { min-height: 100%; background: #0E0E10; color: #F0EFE8; font-family: 'DM Sans', -apple-system, sans-serif; }
+
+:root {
+  --bg:#0E0E10; --c1:#18181C; --c2:#222228;
+  --ln:rgba(255,255,255,0.08);
+  --tx:#F0EFE8; --mu:#888780; --ht:#3A3A3E;
+  --gr:#1D9E75; --grb:rgba(29,158,117,0.13);
+  --pu:#7F77DD; --pub:rgba(127,119,221,0.13);
+  --am:#EF9F27; --amb:rgba(239,159,39,0.13);
+  --bl:#378ADD;
+  --sb:env(safe-area-inset-bottom,0px);
+  --st:env(safe-area-inset-top,0px);
+}
+
+/* ── ONBOARD: простой скроллируемый div ── */
+#ob {
+  padding: calc(var(--st) + 52px) 24px calc(var(--sb) + 40px);
+  min-height: 100vh;
+  min-height: 100dvh;
+}
+#ob h1 { font-size: 32px; font-weight: 600; letter-spacing: -1px; margin: 12px 0 8px; }
+#ob .sub { font-size: 15px; color: var(--mu); line-height: 1.65; margin-bottom: 36px; }
+
+/* ── APP: тоже простой div, скрыт по умолчанию ── */
+#app { display: none; padding-bottom: calc(72px + var(--sb)); }
+
+/* ── НАВИГАЦИЯ: fixed внизу, только когда app виден ── */
+#nav {
+  display: none;
+  position: fixed;
+  bottom: 0; left: 0; right: 0;
+  height: calc(56px + var(--sb));
+  padding-bottom: var(--sb);
+  background: rgba(14,14,16,0.97);
+  border-top: 0.5px solid var(--ln);
+  z-index: 10;
+}
+#nav.on { display: flex; }
+.nb {
+  flex: 1; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 3px;
+  background: none; border: none; color: var(--ht);
+  font-family: 'DM Sans', sans-serif; font-size: 10px;
+  cursor: pointer;
+}
+.nb.on { color: var(--gr); }
+.nb svg { width: 22px; height: 22px; stroke: currentColor; fill: none; stroke-width: 1.8; }
+
+/* ── СТРАНИЦЫ внутри app ── */
+.pg { display: none; }
+.pg.on { display: block; }
+
+/* ── ОБЩИЕ ЭЛЕМЕНТЫ ── */
+.field { margin-bottom: 18px; }
+.field label { display: block; font-size: 14px; color: var(--mu); margin-bottom: 7px; }
+.field input, .field select {
+  display: block; width: 100%;
+  background: var(--c1); border: 1px solid var(--ln);
+  border-radius: 12px; padding: 14px 16px;
+  font-size: 16px; color: var(--tx);
+  font-family: 'DM Sans', sans-serif;
+  -webkit-appearance: none; outline: none;
+}
+.field input:focus, .field select:focus { border-color: var(--gr); }
+
+.btn {
+  display: block; width: 100%; min-height: 52px;
+  line-height: 52px; text-align: center;
+  border-radius: 14px; border: none;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 16px; font-weight: 500; cursor: pointer;
+}
+.btn-g { background: var(--gr); color: #fff; }
+.btn-d { background: var(--c2); color: var(--tx); margin-top: 10px; }
+
+.tag { display:inline-block; font-size:11px; font-weight:500; padding:4px 10px; border-radius:20px; }
+.tr { background:var(--grb); color:var(--gr); }
+.ts { background:var(--pub); color:var(--pu); }
+.tb { background:var(--amb); color:var(--am); }
+.to { background:var(--c2);  color:var(--mu); }
+
+.sec { padding: 8px 16px 6px; font-size: 11px; font-weight: 600; letter-spacing: .07em; text-transform: uppercase; color: var(--mu); }
+.ph  { padding: calc(var(--st)+16px) 16px 10px; }
+.ph h1 { font-size: 28px; font-weight: 600; letter-spacing: -.5px; }
+.ph p  { font-size: 14px; color: var(--mu); margin-top: 4px; }
+
+/* ── HOME ── */
+.hero {
+  margin: calc(var(--st)+12px) 16px 12px;
+  padding: 20px;
+  background: linear-gradient(135deg,rgba(29,158,117,.1),rgba(127,119,221,.07));
+  border: 0.5px solid rgba(29,158,117,.25);
+  border-radius: 20px;
+}
+.hbg { font-size:11px; font-weight:500; color:var(--gr); letter-spacing:.1em; text-transform:uppercase; margin-bottom:6px; }
+.hdy { font-size:22px; font-weight:600; margin-bottom:3px; }
+.hmt { font-size:14px; color:var(--mu); }
+.pr  { display:flex; justify-content:space-between; font-size:13px; color:var(--mu); margin:14px 0 6px; }
+.pt  { height:6px; background:var(--c2); border-radius:3px; overflow:hidden; }
+.pf  { height:100%; background:var(--gr); border-radius:3px; transition:width .5s; }
+
+.sg  { display:grid; grid-template-columns:1fr 1fr; gap:10px; padding:0 16px; margin-bottom:12px; }
+.sc  { background:var(--c1); border:0.5px solid var(--ln); border-radius:14px; padding:14px; }
+.sv  { font-size:26px; font-weight:600; font-family:'DM Mono',monospace; }
+.sl  { font-size:12px; color:var(--mu); margin-top:3px; }
+
+.tcard { margin:0 16px; background:var(--c1); border:0.5px solid var(--ln); border-radius:16px; overflow:hidden; }
+.th    { padding:13px 16px; border-bottom:0.5px solid var(--ln); display:flex; justify-content:space-between; align-items:center; gap:8px; }
+.tb2   { padding:12px 16px 14px; display:flex; flex-direction:column; gap:9px; }
+.tr2   { display:flex; align-items:flex-start; gap:10px; font-size:14px; line-height:1.45; }
+.dot   { width:6px; height:6px; border-radius:50%; flex-shrink:0; margin-top:5px; }
+
+/* ── PLAN ── */
+.wtabs { display:flex; gap:6px; padding:0 16px 14px; overflow-x:auto; scrollbar-width:none; -webkit-overflow-scrolling:touch; }
+.wtabs::-webkit-scrollbar { display:none; }
+.wt { flex-shrink:0; padding:7px 14px; border-radius:20px; font-size:13px; font-weight:500; min-height:36px; border:0.5px solid var(--ln); background:transparent; color:var(--mu); cursor:pointer; font-family:'DM Sans',sans-serif; }
+.wt.on   { background:var(--gr); color:#fff; border-color:transparent; }
+.wt.done { border-color:var(--gr); color:var(--gr); }
+
+.db    { margin:0 16px 8px; border:0.5px solid var(--ln); border-radius:14px; overflow:hidden; background:var(--c1); }
+.dbh   { display:flex; align-items:center; justify-content:space-between; padding:14px 16px; cursor:pointer; min-height:64px; }
+.dbl   { display:flex; align-items:center; gap:12px; }
+.dbar  { width:3px; height:34px; border-radius:2px; flex-shrink:0; }
+.dbnm  { font-size:15px; font-weight:500; }
+.dbsb  { font-size:12px; color:var(--mu); margin-top:2px; }
+.dbr   { display:flex; align-items:center; gap:8px; }
+.dbkm  { font-size:13px; font-family:'DM Mono',monospace; color:var(--mu); }
+.chev  { font-size:16px; color:var(--ht); transition:transform .2s; line-height:1; }
+.chev.op { transform:rotate(180deg); }
+.dbb   { display:none; border-top:0.5px solid var(--ln); }
+.dbb.op { display:block; }
+
+.ck    { display:flex; align-items:flex-start; gap:12px; padding:13px 16px; border-bottom:0.5px solid var(--ln); cursor:pointer; min-height:50px; -webkit-user-select:none; user-select:none; }
+.ck:last-child { border-bottom:none; }
+.ck:active { background:var(--c2); }
+.ck.done .ckt { color:var(--ht); text-decoration:line-through; }
+.ckb   { width:24px; height:24px; border-radius:7px; border:1.5px solid var(--ht); flex-shrink:0; display:flex; align-items:center; justify-content:center; transition:all .18s; }
+.ckb.on { background:var(--gr); border-color:var(--gr); }
+.ckb svg { width:13px; height:13px; stroke:#fff; fill:none; stroke-width:3; }
+@keyframes pop { 0%{transform:scale(.7)} 55%{transform:scale(1.18)} 100%{transform:scale(1)} }
+.ckb.on { animation:pop .2s ease; }
+.ckt   { font-size:14px; line-height:1.5; padding-top:1px; }
+.cksep { padding:6px 16px; font-size:11px; color:var(--ht); }
+
+/* ── PROGRESS ── */
+.chcard { margin:0 16px 12px; background:var(--c1); border:0.5px solid var(--ln); border-radius:16px; padding:14px 14px 10px; height:150px; display:flex; flex-direction:column; }
+.chlbl  { font-size:10px; font-weight:600; letter-spacing:.07em; text-transform:uppercase; color:var(--mu); margin-bottom:8px; }
+.chbars { display:flex; align-items:flex-end; gap:3px; flex:1; min-height:0; }
+.chbc   { flex:1; display:flex; flex-direction:column; align-items:center; gap:4px; height:100%; justify-content:flex-end; }
+.chbf   { width:100%; border-radius:3px 3px 0 0; min-height:3px; transition:height .5s; }
+.chbn   { font-size:9px; color:var(--mu); font-family:'DM Mono',monospace; }
+.hist   { margin:0 16px; display:flex; flex-direction:column; gap:8px; }
+.hrow   { background:var(--c1); border:0.5px solid var(--ln); border-radius:13px; padding:13px 15px; display:flex; justify-content:space-between; align-items:center; }
+.hnm    { font-size:15px; font-weight:500; }
+.hdt    { font-size:13px; color:var(--mu); margin-top:2px; }
+.hkm    { font-size:17px; font-weight:600; font-family:'DM Mono',monospace; color:var(--gr); }
+
+/* ── PROFILE ── */
+.pfform { padding:0 16px; }
+</style>
+</head>
+<body>
+
+<!-- ONBOARDING -->
+<div id="ob">
+  <div style="font-size:44px">🏃‍♀️</div>
+  <h1>RunPlan</h1>
+  <p class="sub">Индивидуальный план бега с правильным нарастанием нагрузки. До 40–48 км/нед к пику.</p>
+
+  <div class="field">
+    <label>Сколько км в неделю бегаешь сейчас?</label>
+    <input type="number" id="ob-km" value="20" min="5" max="80" inputmode="numeric">
+  </div>
+  <div class="field">
+    <label>Цель</label>
+    <select id="ob-goal">
+      <option value="half">Полумарафон — 12 недель</option>
+      <option value="10k">10 км — 10 недель</option>
+      <option value="5k">5 км — 8 недель</option>
+    </select>
+  </div>
+  <div class="field">
+    <label>Силовых тренировок в неделю</label>
+    <select id="ob-str">
+      <option value="0">Без силовых</option>
+      <option value="1">1 раз</option>
+      <option value="2" selected>2 раза</option>
+    </select>
+  </div>
+  <button class="btn btn-g" onclick="saveProfile()">Построить план →</button>
+</div>
+
+<!-- APP -->
+<div id="app">
+
+  <!-- HOME -->
+  <div class="pg on" id="pg-home">
+    <div class="hero">
+      <div class="hbg" id="hbg">–</div>
+      <div class="hdy" id="hdy">–</div>
+      <div class="hmt" id="hmt">–</div>
+      <div class="pr"><span id="htsk">–</span><span id="hpct">–</span></div>
+      <div class="pt"><div class="pf" id="hbar" style="width:0%"></div></div>
+    </div>
+    <div class="sg">
+      <div class="sc"><div class="sv" id="swkm">0</div><div class="sl">км на неделе</div></div>
+      <div class="sc"><div class="sv" id="stkm">0</div><div class="sl">км всего</div></div>
+      <div class="sc"><div class="sv" id="sstr">0</div><div class="sl">дней подряд</div></div>
+      <div class="sc"><div class="sv" id="swn">1</div><div class="sl">неделя</div></div>
+    </div>
+    <div class="sec">Сегодня</div>
+    <div class="tcard" id="tcard"></div>
+    <div style="height:8px"></div>
+  </div>
+
+  <!-- PLAN -->
+  <div class="pg" id="pg-plan">
+    <div class="ph"><h1>План</h1><p id="pmeta">–</p></div>
+    <div class="wtabs" id="wtabs"></div>
+    <div id="pdays"></div>
+    <div style="height:8px"></div>
+  </div>
+
+  <!-- PROGRESS -->
+  <div class="pg" id="pg-progress">
+    <div class="ph"><h1>Прогресс</h1><p>Объём по неделям</p></div>
+    <div class="chcard"><div class="chlbl">км / неделя</div><div class="chbars" id="cbars"></div></div>
+    <div class="sec">История</div>
+    <div class="hist" id="hlist"></div>
+    <div style="height:8px"></div>
+  </div>
+
+  <!-- PROFILE -->
+  <div class="pg" id="pg-profile">
+    <div class="ph"><h1>Профиль</h1></div>
+    <div class="pfform">
+      <div class="field"><label>Текущий объём (км/нед)</label><input type="number" id="pkm" inputmode="numeric"></div>
+      <div class="field"><label>Цель</label>
+        <select id="pgoal"><option value="half">Полумарафон</option><option value="10k">10 км</option><option value="5k">5 км</option></select>
+      </div>
+      <div class="field"><label>Силовых в неделю</label>
+        <select id="pstr"><option value="0">0</option><option value="1">1</option><option value="2">2</option></select>
+      </div>
+      <button class="btn btn-g" onclick="updProfile()">Пересчитать план</button>
+      <button class="btn btn-d" onclick="resetAll()">Сбросить всё</button>
+      <div style="height:8px"></div>
+    </div>
+  </div>
+
+</div><!-- /app -->
+
+<!-- NAV -->
+<nav id="nav">
+  <button class="nb on" id="n-home"     onclick="goTo('home')">
+    <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9,22 9,12 15,12 15,22"/></svg>
+    Главная
+  </button>
+  <button class="nb" id="n-plan"        onclick="goTo('plan')">
+    <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+    План
+  </button>
+  <button class="nb" id="n-progress"    onclick="goTo('progress')">
+    <svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+    Прогресс
+  </button>
+  <button class="nb" id="n-profile"     onclick="goTo('profile')">
+    <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+    Профиль
+  </button>
+</nav>
+
+<script>
+const AV='v7';
+function lg(k,d){try{const v=localStorage.getItem(k);return v!=null?JSON.parse(v):d}catch{return d}}
+function ls(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch{}}
+function key(w,d,t){return w+'_'+d+'_'+t}
+function tc(t){return t==='run'?'tr':t==='str'?'ts':t==='both'?'tb':'to'}
+
+function buildPlan(base,goal,strN){
+  const C={half:{W:12,pk:46},'10k':{W:10,pk:36},'5k':{W:8,pk:28}}[goal];
+  const sd=parseInt(strN);
+  const vs=[];let km=Math.max(base,15);
+  for(let i=0;i<C.W;i++){
+    if(i===C.W-1)km=Math.round(vs[i-1]*0.55);
+    else if(i===C.W-2)km=Math.round(vs[i-1]*0.72);
+    else if((i+1)%4===0)km=Math.round(km*0.82);
+    else km=Math.min(Math.round(km*1.18),C.pk);
+    vs.push(km);
+  }
+  const sL=['Приседания 3×12','Выпады 3×12 на каждую ногу','Ягодичный мост 3×15','Планка 3×45 сек','Подъёмы на носки 3×20','Боковые выпады 3×12','Растяжка 5 мин'];
+  const sU=['Отжимания 3×12','Тяга гантелей 3×12','Скручивания 3×15','Боковая планка 2×40 сек','Superman 3×12','Растяжка 5 мин'];
+  const Z='Зарядка 10 мин — суставная гимнастика';
+  const S='Растяжка после бега 5–7 мин';
+  const ep=base<25?'6:30–7:00':base<35?'6:00–6:30':'5:45–6:15';
+  return vs.map((wkm,wi)=>{
+    const lon=Math.round(wkm*0.35),itv=Math.round(wkm*0.20),rem=wkm-lon-itv;
+    const e1=Math.round(rem*0.60),e3=rem-e1;
+    const reps=Math.min(3+Math.floor(wi/3),6);
+    const id=wi<4?'400 м':wi<8?'800 м':'1000 м';
+    const ip=wi<4?'~5:30':wi<8?'~5:15':'~5:00';
+    const ir=wi<4?'90 сек':'2 мин';
+    const ph=wi>=C.W-2?'Подводка':(wi+1)%4===0?'Разгрузочная':'Фаза '+(Math.floor(wi/4)+1);
+    return{w:wi+1,W:C.W,km:wkm,phase:ph,days:[
+      {dow:'Пн',name:'Понедельник',col:'#888780',type:'rest',tag:'Отдых',km:0,tasks:[Z,'Ходьба 20–30 мин или полный отдых','Лёгкая растяжка 5 мин']},
+      {dow:'Вт',name:'Вторник',col:'#1D9E75',type:'run',tag:'Лёгкий бег',km:e1,tasks:[Z,'Лёгкий бег '+e1+' км ('+ep+' мин/км)',S]},
+      sd>=1
+        ?{dow:'Ср',name:'Среда',col:'#7F77DD',type:'str',tag:'Силовая — ноги',km:0,tasks:[Z,...sL]}
+        :{dow:'Ср',name:'Среда',col:'#1D9E75',type:'run',tag:'Лёгкий бег',km:Math.round(rem*0.35),tasks:[Z,'Лёгкий бег '+Math.round(rem*0.35)+' км ('+ep+' мин/км)',S]},
+      {dow:'Чт',name:'Четверг',col:'#1D9E75',type:'run',tag:wi<4?'Интервалы':'Темповый бег',km:itv,
+       tasks:wi<4
+         ?[Z,'Разминка 2 км',...Array.from({length:reps},(_,r)=>'Интервал '+(r+1)+': '+id+' в темпе '+ip+' → '+ir+' ходьбой'),'Заминка '+Math.max(1,itv-2-(reps*0.5|0))+' км']
+         :[Z,'Разминка 2 км','Темповый бег '+Math.max(2,itv-4)+' км — на 20–30 сек/км быстрее лёгкого','Заминка 2 км',S]},
+      {dow:'Пт',name:'Пятница',col:'#888780',type:'rest',tag:'Отдых',km:0,tasks:[Z,'Поза голубя 2 мин','Поза ребёнка 2 мин','Полный отдых — завтра длинная']},
+      {dow:'Сб',name:'Суббота',col:sd>=2?'#EF9F27':'#1D9E75',type:sd>=2?'both':'run',tag:sd>=2?'Сила + длинная':'Длинная',km:lon,
+       tasks:sd>=2
+         ?[Z,...sU,'── Через 3–4 часа ──','Длинная '+lon+' км ('+ep+' мин/км)',lon>=14?'Гели/финики каждые 30–40 мин':'Взять воду','Растяжка 10 мин']
+         :[Z,'Длинная '+lon+' км ('+ep+' мин/км)',lon>=14?'Гели/финики каждые 30–40 мин':'Взять воду','Растяжка 10 мин']},
+      e3>=3
+        ?{dow:'Вс',name:'Воскресенье',col:'#378ADD',type:'run',tag:'Восстановительный',km:e3,tasks:[Z,'Восстановительный бег '+e3+' км — очень медленно',S,'Оценить самочувствие']}
+        :{dow:'Вс',name:'Воскресенье',col:'#378ADD',type:'rest',tag:'Восстановление',km:0,tasks:[Z,'Ходьба 30–40 мин','Оценить самочувствие']},
+    ]};
+  });
+}
+
+let P=lg('rp_p',null),CK=lg('rp_ck',{}),CW=lg('rp_cw',1),VW=CW,plan=null;
+if(P){
+  if(lg('rp_av','')!==AV){plan=buildPlan(P.km,P.goal,P.str);ls('rp_pl',plan);ls('rp_av',AV);}
+  else plan=lg('rp_pl',null);
+}
+
+function saveProfile(){
+  const km=parseInt(document.getElementById('ob-km').value)||20;
+  P={km,goal:document.getElementById('ob-goal').value,str:document.getElementById('ob-str').value};
+  ls('rp_p',P);plan=buildPlan(P.km,P.goal,P.str);ls('rp_pl',plan);ls('rp_av',AV);
+  document.getElementById('ob').style.display='none';
+  document.getElementById('app').style.display='block';
+  document.getElementById('nav').classList.add('on');
+  refreshHome();
+}
+
+function updProfile(){
+  P.km=parseInt(document.getElementById('pkm').value)||P.km;
+  P.goal=document.getElementById('pgoal').value;
+  P.str=document.getElementById('pstr').value;
+  ls('rp_p',P);CK={};ls('rp_ck',{});CW=1;ls('rp_cw',1);VW=1;
+  plan=buildPlan(P.km,P.goal,P.str);ls('rp_pl',plan);ls('rp_av',AV);
+  goTo('home');
+}
+
+function resetAll(){if(!confirm('Сбросить?'))return;localStorage.clear();location.reload();}
+
+function goTo(tab){
+  document.querySelectorAll('.pg').forEach(p=>p.classList.remove('on'));
+  document.querySelectorAll('.nb').forEach(b=>b.classList.remove('on'));
+  document.getElementById('pg-'+tab).classList.add('on');
+  document.getElementById('n-'+tab).classList.add('on');
+  window.scrollTo(0,0);
+  if(tab==='plan'){VW=CW;renderPlan();}
+  else if(tab==='progress')renderProgress();
+  else if(tab==='profile')fillProfile();
+  else refreshHome();
+}
+
+function refreshHome(){
+  if(!plan)return;
+  const w=plan[CW-1];
+  const di=new Date().getDay()===0?6:new Date().getDay()-1;
+  const day=w.days[di];
+  const gn={half:'Полумарафон','10k':'10 км','5k':'5 км'}[P.goal];
+  document.getElementById('hbg').textContent='Неделя '+w.w+' из '+w.W+' · '+gn;
+  document.getElementById('hdy').textContent=day.name;
+  document.getElementById('hmt').textContent=w.phase+' · '+w.km+' км на неделе';
+  let tot=0,dn=0;
+  w.days.forEach((d,i)=>d.tasks.forEach((_,j)=>{tot++;if(CK[key(CW,i,j)])dn++;}));
+  const pct=tot?Math.round(dn/tot*100):0;
+  document.getElementById('htsk').textContent=dn+' / '+tot+' задач';
+  document.getElementById('hpct').textContent=pct+'%';
+  document.getElementById('hbar').style.width=pct+'%';
+  document.getElementById('swkm').textContent=wKm(CW);
+  document.getElementById('stkm').textContent=tKm();
+  document.getElementById('sstr').textContent=streak();
+  document.getElementById('swn').textContent=CW;
+  const km=day.km>0?' · '+day.km+' км':'';
+  const allDn=day.tasks.every((_,ti)=>CK[key(CW,di,ti)]);
+  let h='<div class="th"><span style="font-size:15px;font-weight:500">'+day.name+'</span><span class="tag '+tc(day.type)+'">'+day.tag+km+'</span></div><div class="tb2">';
+  if(allDn){h+='<div style="text-align:center;padding:8px;font-size:15px;font-weight:500;color:var(--gr)">✓ Всё выполнено!</div>';}
+  else{
+    day.tasks.slice(0,4).forEach((t,ti)=>{
+      const d=CK[key(CW,di,ti)];
+      h+='<div class="tr2"><div class="dot" style="background:'+(d?'var(--ht)':day.col)+'"></div><span style="font-size:14px;'+(d?'color:var(--ht);text-decoration:line-through':'')+'">'+(t)+'</span></div>';
+    });
+    if(day.tasks.length>4)h+='<div style="font-size:13px;color:var(--mu);padding-left:14px">+ ещё '+(day.tasks.length-4)+'</div>';
+  }
+  h+='</div>';
+  document.getElementById('tcard').innerHTML=h;
+}
+
+function wKm(wn){return plan[wn-1].days.reduce((a,d,di)=>d.km&&d.tasks.some((_,ti)=>CK[key(wn,di,ti)])?a+d.km:a,0);}
+function tKm(){let t=0;for(let w=1;w<=CW;w++)t+=wKm(w);return t;}
+function streak(){
+  let s=0;
+  for(let i=0;i<14;i++){
+    const d=new Date();d.setDate(d.getDate()-i);
+    const di=d.getDay()===0?6:d.getDay()-1;
+    if(plan[CW-1]?.days[di]?.tasks.some((_,ti)=>CK[key(CW,di,ti)]))s++;
+    else if(i>0)break;
+  }
+  return s;
+}
+
+function renderPlan(){
+  if(!plan)return;
+  const w=plan[VW-1];
+  document.getElementById('pmeta').textContent='Неделя '+w.w+' · '+w.phase+' · '+w.km+' км';
+  let tabs='';
+  plan.forEach(wk=>{const v=wk.w===VW,d=wk.w<CW;tabs+='<button class="wt'+(v?' on':d?' done':'')+'" onclick="setVW('+wk.w+')">Нед '+wk.w+'</button>';});
+  document.getElementById('wtabs').innerHTML=tabs;
+  let html='';
+  w.days.forEach((day,di)=>{
+    const dnN=day.tasks.filter((_,ti)=>CK[key(VW,di,ti)]).length;
+    const allDn=dnN===day.tasks.length;
+    html+='<div class="db"><div class="dbh" onclick="tDay('+di+')"><div class="dbl"><div class="dbar" style="background:'+day.col+'"></div><div><div class="dbnm">'+day.name+'</div><div class="dbsb">'+day.tag+(dnN>0?' · '+dnN+'/'+day.tasks.length:'')+'</div></div></div><div class="dbr">'+(day.km>0?'<span class="dbkm">'+day.km+' км</span>':'')+(allDn?'<span style="color:var(--gr);font-size:14px">✓</span>':'')+'<span class="chev" id="cv'+di+'">⌄</span></div></div><div class="dbb" id="dbb'+di+'">';
+    day.tasks.forEach((task,ti)=>{
+      if(task.startsWith('──')){html+='<div class="cksep">'+task+'</div>';return;}
+      const K=key(VW,di,ti),dn=!!CK[K];
+      html+='<div class="ck'+(dn?' done':'')+'" onclick="tCk(\''+K+'\')"><div class="ckb'+(dn?' on':'')+'>'+(dn?'<svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>':'')+'</div><span class="ckt">'+task+'</span></div>';
+    });
+    html+='</div></div>';
+  });
+  document.getElementById('pdays').innerHTML=html;
+  if(VW===CW){const td=new Date().getDay()===0?6:new Date().getDay()-1;openDay(td);}
+}
+function tDay(i){const b=document.getElementById('dbb'+i),c=document.getElementById('cv'+i);if(!b)return;const op=!b.classList.contains('op');b.classList.toggle('op',op);if(c)c.classList.toggle('op',op);}
+function openDay(i){const b=document.getElementById('dbb'+i),c=document.getElementById('cv'+i);if(b)b.classList.add('op');if(c)c.classList.add('op');}
+function setVW(w){VW=w;renderPlan();}
+function tCk(K){CK[K]=!CK[K];ls('rp_ck',CK);renderPlan();refreshHome();}
+
+function renderProgress(){
+  if(!plan)return;
+  const mx=Math.max(...plan.map(w=>w.km));
+  let bars='';
+  plan.forEach(w=>{
+    const comp=w.w<CW,cur=w.w===CW;
+    const h=Math.round(w.km/mx*100);
+    bars+='<div class="chbc"><div class="chbf" style="height:'+h+'%;background:'+(cur?'var(--gr)':comp?'#0F6E56':'var(--ht)')+';opacity:'+(comp||cur?1:.3)+'"></div><div class="chbn" style="'+(cur?'color:var(--gr)':'')+'">'+w.w+'</div></div>';
+  });
+  document.getElementById('cbars').innerHTML=bars;
+  let hist='';
+  for(let wn=CW;wn>=Math.max(1,CW-6);wn--){
+    plan[wn-1].days.forEach((d,di)=>{
+      if(!d.km)return;
+      if(d.tasks.some((_,ti)=>CK[key(wn,di,ti)])){
+        hist+='<div class="hrow"><div><div class="hnm">'+d.tag+'</div><div class="hdt">Нед '+wn+' · '+d.dow+'</div></div><div class="hkm">'+d.km+' км</div></div>';
+      }
+    });
+  }
+  document.getElementById('hlist').innerHTML=hist||'<div style="text-align:center;color:var(--mu);padding:28px;font-size:14px">Пока нет завершённых пробежек</div>';
+}
+
+function fillProfile(){
+  if(!P)return;
+  document.getElementById('pkm').value=P.km;
+  document.getElementById('pgoal').value=P.goal;
+  document.getElementById('pstr').value=P.str;
+}
+
+// INIT
+if(P&&plan){
+  document.getElementById('ob').style.display='none';
+  document.getElementById('app').style.display='block';
+  document.getElementById('nav').classList.add('on');
+  refreshHome();
+}
+</script>
+</body>
+</html>
